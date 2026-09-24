@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ShaderMind</title>
+  </head>
+  <body>
+    <div id="app">
+      <header class="toolbar">
+        <div class="brand">
+          <span class="brand-mark"></span>
+          <span>ShaderMind</span>
+        </div>
+
+        <div class="tool-group">
+          <button class="tool" id="btn-open" data-icon="folder" title="打开 (Ctrl+O)"><span>打开</span></button>
+          <button class="tool" id="btn-save" data-icon="save" title="保存 (Ctrl+S)"><span>保存</span></button>
+          <button class="tool" id="btn-save-as" data-icon="saveAs" title="另存为 (Ctrl+Shift+S)"><span>另存为</span></button>
+        </div>
+        <div class="tool-sep"></div>
+        <div class="tool-group">
+          <button class="tool" id="btn-pause" data-icon="pause" title="暂停 / 继续时间 (空格)"><span>暂停</span></button>
+          <button class="tool" id="btn-reset" data-icon="reset" title="时间归零 (Ctrl+R)"><span>归零</span></button>
+        </div>
+
+        <button class="command-center" id="btn-palette" title="命令面板 (Ctrl+Shift+P)">
+          <span class="cc-icon" data-icon="search"></span>
+          <span class="cc-text" id="cc-text">ShaderMind</span>
+          <span class="cc-keys"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>P</kbd></span>
+        </button>
+
+        <div class="tool-group right">
+          <button class="tool icon-only" id="btn-settings" data-icon="settings" title="设置 (Ctrl+,)"></button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="pane pane-editor" id="pane-editor">
+          <div class="tabs">
+            <div class="tab active" id="tab">
+              <span class="tab-icon" data-icon="file"></span>
+              <span class="tab-name" id="tab-name">未命名</span>
+              <span class="tab-dirty" id="tab-dirty" title="未保存"></span>
+            </div>
+            <div class="tabs-fill"></div>
+            <span class="tab-lang">GLSL ES 3.00</span>
+          </div>
+          <div id="editor"></div>
+          <div class="problems" id="problems" hidden>
+            <div class="problems-header">
+              <span class="problems-title">问题</span>
+              <span class="problems-count" id="problems-count">0</span>
+              <span class="problems-note">编译失败时预览保持上一次成功的画面</span>
+            </div>
+            <div class="problems-list" id="errors"></div>
+          </div>
+        </section>
+
+        <div class="splitter" id="splitter" title="拖动调整宽度，双击恢复均分"></div>
+
+        <section class="pane pane-preview">
+          <div class="canvas-wrap" id="canvas-wrap">
+            <canvas id="gl"></canvas>
+            <div class="preview-badge" id="preview-badge" hidden>
+              <span data-icon="error"></span>
+              <span>编译失败，显示的是上一次成功的画面</span>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="channels" id="channels"></footer>
+
+      <div class="statusbar">
+        <button class="sb-item sb-problems" id="sb-problems" title="问题">
+          <span data-icon="error"></span><span id="sb-errors">0</span>
+          <span data-icon="warning"></span><span id="sb-warnings">0</span>
+        </button>
+        <span class="sb-item sb-path" id="sb-path"></span>
+        <span class="sb-fill"></span>
+        <button class="sb-item" id="sb-cursor" title="跳转到行 (Ctrl+G)">行 1，列 1</button>
+        <span class="sb-item" id="sb-selection" hidden></span>
+        <button class="sb-item" id="sb-indent" title="缩进设置">空格: 4</button>
+        <button class="sb-item" id="sb-font" title="字号（Ctrl+滚轮调整）">14px</button>
+        <span class="sb-item sb-sep"></span>
+        <span class="sb-item mono" id="stat-time">0.00s</span>
+        <span class="sb-item mono" id="stat-res">0×0</span>
+        <span class="sb-item mono" id="stat-fps">0 fps</span>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
