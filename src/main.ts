@@ -51,6 +51,9 @@ const el = {
   btnReset: $<HTMLButtonElement>("btn-reset"),
   btnPalette: $<HTMLButtonElement>("btn-palette"),
   btnSettings: $<HTMLButtonElement>("btn-settings"),
+  winMin: $<HTMLButtonElement>("win-min"),
+  winMax: $<HTMLButtonElement>("win-max"),
+  winClose: $<HTMLButtonElement>("win-close"),
   ccText: $("cc-text"),
   tab: $("tab"),
   tabName: $("tab-name"),
@@ -591,6 +594,7 @@ async function main(): Promise<void> {
   // 关窗时先拦下来把状态写完再真正销毁，否则 IPC 可能来不及跑完
   try {
     const appWindow = getCurrentWindow();
+    setupWindowControls(appWindow);
     appWindow
       .onCloseRequested(async (event) => {
         event.preventDefault();
@@ -601,6 +605,23 @@ async function main(): Promise<void> {
   } catch (err) {
     console.warn("不在 Tauri 环境中", err);
   }
+}
+
+/** 自绘标题栏的最小化 / 最大化 / 关闭按钮；最大化按钮随窗口状态切换图标。 */
+function setupWindowControls(appWindow: ReturnType<typeof getCurrentWindow>): void {
+  el.winMin.addEventListener("click", () => void appWindow.minimize());
+  el.winMax.addEventListener("click", () => void appWindow.toggleMaximize());
+  // close() 会走 onCloseRequested，先保存配置再销毁
+  el.winClose.addEventListener("click", () => void appWindow.close());
+
+  const syncMaximized = async () => {
+    const maximized = await appWindow.isMaximized();
+    el.winMax.dataset.icon = maximized ? "winRestore" : "winMax";
+    el.winMax.title = maximized ? "还原" : "最大化";
+    hydrateIcons(el.winMax.parentElement!);
+  };
+  void syncMaximized();
+  appWindow.onResized(() => void syncMaximized()).catch((err) => console.warn("窗口尺寸监听注册失败", err));
 }
 
 void main();

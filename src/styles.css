@@ -73,9 +73,10 @@ kbd {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0 8px 0 12px;
+  padding: 0 0 0 12px;
   background: var(--ui-panel);
   border-bottom: 1px solid var(--ui-border);
+  user-select: none;
 }
 .brand {
   display: flex;
@@ -105,6 +106,7 @@ kbd {
   border-radius: 5px;
   color: var(--ui-fg);
   font-size: 12.5px;
+  white-space: nowrap;
 }
 .tool.icon-only { width: 30px; padding: 0; justify-content: center; }
 .tool:hover { background: var(--ui-hover); }
@@ -132,7 +134,23 @@ kbd {
 .cc-keys { display: flex; gap: 2px; }
 .cc-keys kbd { font-size: 10px; line-height: 15px; min-width: 16px; padding: 0 4px; }
 @media (max-width: 980px) { .command-center .cc-keys { display: none; } }
-@media (max-width: 860px) { .tool span { display: none; } .tool { padding: 0 7px; } }
+
+/* 窗口按钮：贴住右上角、占满工具栏高度，和 Windows 自带的一致 */
+.window-controls { display: flex; align-self: stretch; margin-left: 6px; }
+.win-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  color: var(--ui-fg-dim);
+}
+.win-btn .icon { width: 15px; height: 15px; stroke-width: 1.3; }
+.win-btn:hover { background: var(--ui-hover); color: var(--ui-fg); }
+.win-btn:active { background: color-mix(in srgb, var(--ui-hover) 60%, var(--ui-border)); }
+.win-btn.win-close:hover { background: #c42b1c; color: #fff; }
+.win-btn.win-close:active { background: #b22a1b; color: #fff; }
+/* 右上角多了窗口按钮，窄到放不下文字时只留图标 */
+@media (max-width: 900px) { .tool span { display: none; } .tool { padding: 0 7px; } }
 
 /* ================================================================ 工作区 */
 

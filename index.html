@@ -7,10 +7,11 @@
   </head>
   <body>
     <div id="app">
-      <header class="toolbar">
-        <div class="brand">
-          <span class="brand-mark"></span>
-          <span>ShaderMind</span>
+      <!-- 系统标题栏已关闭，工具栏兼作标题栏：空白处可拖动窗口、双击最大化 -->
+      <header class="toolbar" data-tauri-drag-region>
+        <div class="brand" data-tauri-drag-region>
+          <span class="brand-mark" data-tauri-drag-region></span>
+          <span data-tauri-drag-region>ShaderMind</span>
         </div>
 
         <div class="tool-group">
@@ -32,6 +33,12 @@
 
         <div class="tool-group right">
           <button class="tool icon-only" id="btn-settings" data-icon="settings" title="设置 (Ctrl+,)"></button>
+        </div>
+
+        <div class="window-controls">
+          <button class="win-btn" id="win-min" data-icon="winMin" title="最小化"></button>
+          <button class="win-btn" id="win-max" data-icon="winMax" title="最大化"></button>
+          <button class="win-btn win-close" id="win-close" data-icon="winClose" title="关闭"></button>
         </div>
       </header>
 

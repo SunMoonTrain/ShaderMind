@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine as _;
 use tauri::Manager;
+use tauri_plugin_window_state::StateFlags;
 
 const CONFIG_FILE: &str = "config.json";
 
@@ -82,8 +83,13 @@ fn write_text_file(path: String, contents: String) -> Result<(), String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        // 记住窗口的尺寸与位置
-        .plugin(tauri_plugin_window_state::Builder::default().build())
+        // 记住窗口的尺寸与位置。不记 DECORATIONS：标题栏是自己画的，
+        // 否则旧版本存下的 decorated: true 会把系统标题栏恢复回来
+        .plugin(
+            tauri_plugin_window_state::Builder::default()
+                .with_state_flags(StateFlags::all() & !StateFlags::DECORATIONS)
+                .build(),
+        )
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             load_config,

@@ -21,6 +21,11 @@ const PATHS: Record<string, string> = {
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   minus: '<path d="M6 12h12"/>',
   plus: '<path d="M12 6v12"/><path d="M6 12h12"/>',
+  // 窗口按钮：仿 Windows 11 的细线图标
+  winMin: '<path d="M6 12h12"/>',
+  winMax: '<rect x="6" y="6" width="12" height="12" rx="1.5"/>',
+  winRestore: '<rect x="6" y="8.5" width="9.5" height="9.5" rx="1.5"/><path d="M8.5 6h8a1.5 1.5 0 0 1 1.5 1.5v8"/>',
+  winClose: '<path d="M6.5 6.5l11 11"/><path d="M17.5 6.5l-11 11"/>',
   keyboard:
     '<rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/>',
 };
