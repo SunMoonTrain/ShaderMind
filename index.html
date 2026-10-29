@@ -74,6 +74,22 @@
               <span>编译失败，显示的是上一次成功的画面</span>
             </div>
           </div>
+          <!-- 画布比例：模拟特效所贴面片的形状 -->
+          <div class="aspect-control" title="画布比例（宽:高），模拟特效所贴面片的形状">
+            <span class="aspect-label">比例</span>
+            <select id="aspect-select">
+              <option value="fill">填满</option>
+              <option value="1:1">1:1</option>
+              <option value="2:1">2:1</option>
+              <option value="4:1">4:1</option>
+              <option value="custom">自定义</option>
+            </select>
+            <span class="aspect-custom" id="aspect-custom" hidden>
+              <input type="number" id="aspect-w" min="0.1" step="any" aria-label="宽" />
+              <span>:</span>
+              <input type="number" id="aspect-h" min="0.1" step="any" aria-label="高" />
+            </span>
+          </div>
         </section>
       </main>
 

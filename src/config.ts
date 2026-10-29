@@ -19,6 +19,8 @@ export interface AppConfig {
   paused: boolean;
   /** 左侧编辑区占窗口宽度的比例，0~1。 */
   editorRatio: number;
+  /** 画布比例 [宽, 高]，模拟特效所贴面片的形状；null 表示填满预览区。 */
+  canvasAspect: [number, number] | null;
   /** 编辑器外观与行为设置 */
   settings: EditorSettings;
 }
@@ -30,8 +32,17 @@ export function defaultConfig(): AppConfig {
     channels: Array(CHANNEL_COUNT).fill(null),
     paused: false,
     editorRatio: 0.5,
+    canvasAspect: null,
     settings: { ...DEFAULT_SETTINGS },
   };
+}
+
+function sanitizeAspect(value: unknown): [number, number] | null {
+  if (!Array.isArray(value) || value.length !== 2) return null;
+  const [w, h] = value;
+  if (typeof w !== "number" || typeof h !== "number" || !(w > 0) || !(h > 0)) return null;
+  const ratio = w / h;
+  return ratio >= 0.05 && ratio <= 20 ? [w, h] : null;
 }
 
 function sanitizeChannel(value: unknown): ChannelConfig | null {
@@ -83,6 +94,7 @@ function sanitize(value: unknown): AppConfig {
     channels,
     paused: raw.paused === true,
     editorRatio: Math.min(Math.max(ratio, 0.15), 0.85),
+    canvasAspect: sanitizeAspect(raw.canvasAspect),
     settings: sanitizeSettings(raw.settings),
   };
 }

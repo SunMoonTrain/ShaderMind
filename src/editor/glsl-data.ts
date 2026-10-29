@@ -54,6 +54,10 @@ export const APP_SYMBOLS: Record<string, SymbolDoc> = {
   },
   iDate: { signature: "uniform vec4 iDate", doc: "本地日期：年、月（0 起）、日、当天已过秒数。" },
   iSampleRate: { signature: "uniform float iSampleRate", doc: "音频采样率，固定 44100。" },
+  vUV: {
+    signature: "in vec2 vUV",
+    doc: "画布 uv：整个画布从 0 到 1，左下角为原点。ShaderMind 扩展，Shadertoy 上没有。",
+  },
   iChannel0: { signature: "uniform sampler2D iChannel0", doc: "纹理槽 0。空槽是 1×1 黑色纹理。" },
   iChannel1: { signature: "uniform sampler2D iChannel1", doc: "纹理槽 1。空槽是 1×1 黑色纹理。" },
   iChannel2: { signature: "uniform sampler2D iChannel2", doc: "纹理槽 2。空槽是 1×1 黑色纹理。" },

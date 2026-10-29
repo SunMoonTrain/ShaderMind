@@ -3,10 +3,15 @@
  * 默认示例代码，以及把驱动的编译日志翻译成编辑器行号。
  */
 
-/** 内置顶点着色器：无属性，用 gl_VertexID 生成一个铺满屏幕的三角形。 */
+/**
+ * 内置顶点着色器：无属性，用 gl_VertexID 生成一个铺满屏幕的三角形。
+ * 三个顶点的 p 是 (0,0) (2,0) (0,2)，插值到画布范围内正好是 0..1，直接当作 vUV 输出。
+ */
 export const VERTEX_SHADER = `#version 300 es
+out vec2 vUV;
 void main() {
   vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
+  vUV = p;
   gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
 }
 `;
@@ -37,6 +42,7 @@ uniform sampler2D iChannel1;
 uniform sampler2D iChannel2;
 uniform sampler2D iChannel3;
 
+in vec2 vUV;
 out vec4 fragColor;
 `;
 
@@ -143,6 +149,7 @@ export const DEFAULT_SHADER = `// ShaderMind — 示例着色器
 //   int       iFrame;                帧序号
 //   vec4      iMouse;                xy: 按住时的鼠标像素坐标；zw: 点击位置（松开后为负）
 //   vec4      iDate;                 年、月（0 起）、日、当天秒数
+//   vec2      vUV;                   画布 uv，0..1，左下角为原点（ShaderMind 扩展）
 //   sampler2D iChannel0 .. iChannel3 下方四个纹理槽位
 //   vec3      iChannelResolution[4]; 各槽位的像素尺寸
 

@@ -41,6 +41,11 @@ const el = {
   errors: $("errors"),
   canvas: $<HTMLCanvasElement>("gl"),
   previewBadge: $("preview-badge"),
+  canvasWrap: $("canvas-wrap"),
+  aspectSelect: $<HTMLSelectElement>("aspect-select"),
+  aspectCustom: $("aspect-custom"),
+  aspectW: $<HTMLInputElement>("aspect-w"),
+  aspectH: $<HTMLInputElement>("aspect-h"),
   workspace: document.querySelector<HTMLElement>(".workspace")!,
   splitter: $("splitter"),
   channels: $("channels"),
@@ -112,6 +117,7 @@ async function main(): Promise<void> {
   /** 编辑器内容与磁盘上的文件是否一致。 */
   let dirty = false;
   let editorRatio = config.editorRatio;
+  let canvasAspect = config.canvasAspect;
   /** 是否编译成功过：决定出错时预览区的提示文字 */
   let everCompiled = false;
   let firstErrorLine: number | null = null;
@@ -146,6 +152,7 @@ async function main(): Promise<void> {
       channels: channels.toConfig(),
       paused: renderer.isPaused(),
       editorRatio,
+      canvasAspect,
       settings,
     };
   }
@@ -487,6 +494,71 @@ async function main(): Promise<void> {
   el.canvas.addEventListener("pointermove", (event) => renderer.pointerMove(...canvasPoint(event)));
   el.canvas.addEventListener("pointerup", () => renderer.pointerUp());
   el.canvas.addEventListener("pointercancel", () => renderer.pointerUp());
+
+  // ------------------------------------------------------------ 画布比例
+
+  const ASPECT_PRESETS = ["1:1", "2:1", "4:1"];
+
+  /** 按比例在预览区里放下最大的画布；渲染器每帧按 clientWidth/Height 调整分辨率。 */
+  function layoutCanvas(): void {
+    el.canvasWrap.classList.toggle("fixed-aspect", canvasAspect !== null);
+    if (!canvasAspect) {
+      el.canvas.style.width = el.canvas.style.height = "";
+      return;
+    }
+    const ratio = canvasAspect[0] / canvasAspect[1];
+    const availW = el.canvasWrap.clientWidth;
+    const availH = el.canvasWrap.clientHeight;
+    const width = Math.min(availW, availH * ratio);
+    el.canvas.style.width = `${Math.floor(width)}px`;
+    el.canvas.style.height = `${Math.floor(width / ratio)}px`;
+  }
+
+  function syncAspectControl(): void {
+    const key = canvasAspect ? `${canvasAspect[0]}:${canvasAspect[1]}` : "fill";
+    const preset = key === "fill" || ASPECT_PRESETS.includes(key);
+    el.aspectSelect.value = preset ? key : "custom";
+    el.aspectCustom.hidden = preset;
+    if (canvasAspect && !preset) {
+      el.aspectW.value = String(canvasAspect[0]);
+      el.aspectH.value = String(canvasAspect[1]);
+    }
+  }
+
+  function setCanvasAspect(aspect: [number, number] | null): void {
+    canvasAspect = aspect;
+    layoutCanvas();
+    scheduleSave();
+  }
+
+  el.aspectSelect.addEventListener("change", () => {
+    const value = el.aspectSelect.value;
+    if (value === "custom") {
+      // 以当前比例为起点，没有就给个 3:1
+      const [w, h] = canvasAspect ?? [3, 1];
+      el.aspectW.value = String(w);
+      el.aspectH.value = String(h);
+      el.aspectCustom.hidden = false;
+      setCanvasAspect([w, h]);
+      el.aspectW.select();
+      return;
+    }
+    el.aspectCustom.hidden = true;
+    setCanvasAspect(value === "fill" ? null : (value.split(":").map(Number) as [number, number]));
+  });
+
+  const onCustomInput = () => {
+    const w = Number(el.aspectW.value);
+    const h = Number(el.aspectH.value);
+    // 输入到一半（空、0、比例过于极端）时先不应用
+    if (w > 0 && h > 0 && w / h >= 0.05 && w / h <= 20) setCanvasAspect([w, h]);
+  };
+  el.aspectW.addEventListener("input", onCustomInput);
+  el.aspectH.addEventListener("input", onCustomInput);
+
+  new ResizeObserver(layoutCanvas).observe(el.canvasWrap);
+  syncAspectControl();
+  layoutCanvas();
 
   // ------------------------------------------------------------ 分隔条
 
