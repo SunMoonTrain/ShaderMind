@@ -45,6 +45,25 @@ function sanitizeChannel(value: unknown): ChannelConfig | null {
   };
 }
 
+/**
+ * 改成 Shadertoy 写法之前的示例代码（FNV-1a 哈希）。旧示例用的是 vec2 的 iResolution / iMouse，
+ * 在新版里编译不过；没改动过的旧示例在读配置时直接换成新示例，改过的保持原样。
+ */
+const LEGACY_DEFAULT_HASHES = new Set(["24fa260e"]);
+
+function fnv1a(text: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(16);
+}
+
+function migrateSource(source: string): string {
+  return LEGACY_DEFAULT_HASHES.has(fnv1a(source.replace(/\r\n/g, "\n"))) ? DEFAULT_SHADER : source;
+}
+
 /** 磁盘上的配置可能来自旧版本或被手工改坏，这里逐字段收敛到合法值。 */
 function sanitize(value: unknown): AppConfig {
   const fallback = defaultConfig();
@@ -59,7 +78,7 @@ function sanitize(value: unknown): AppConfig {
   const ratio = typeof raw.editorRatio === "number" ? raw.editorRatio : fallback.editorRatio;
 
   return {
-    source: typeof raw.source === "string" ? raw.source : fallback.source,
+    source: typeof raw.source === "string" ? migrateSource(raw.source) : fallback.source,
     shaderPath: typeof raw.shaderPath === "string" && raw.shaderPath ? raw.shaderPath : null,
     channels,
     paused: raw.paused === true,
