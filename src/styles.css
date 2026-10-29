@@ -770,6 +770,67 @@ button.sb-item:hover { background: var(--ui-hover); color: var(--ui-fg); }
   pointer-events: none;
 }
 
+/* 取色板：饱和度 / 明度方块 + 色相条 + 透明度条（vec4） */
+.sm-sv {
+  position: relative;
+  width: 200px;
+  height: 130px;
+  border-radius: 3px;
+  background:
+    linear-gradient(to top, #000, transparent),
+    linear-gradient(to right, #fff, var(--hue));
+  cursor: crosshair;
+  touch-action: none;
+}
+.sm-sv:focus-visible { outline: 1px solid var(--ui-accent); outline-offset: 1px; }
+.sm-sv-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .6);
+  pointer-events: none;
+}
+.sm-strip {
+  position: relative;
+  width: 200px;
+  height: 12px;
+  border-radius: 3px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.sm-hue {
+  background: linear-gradient(to right, #f00, #ff0 16.67%, #0f0 33.33%, #0ff 50%, #00f 66.67%, #f0f 83.33%, #f00);
+}
+.sm-alpha {
+  background:
+    linear-gradient(to right, transparent, var(--opaque)),
+    repeating-conic-gradient(#999 0% 25%, #ddd 0% 50%) 0 0 / 8px 8px;
+}
+.sm-strip-thumb {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 6px;
+  margin-left: -3px;
+  border-radius: 2px;
+  border: 1.5px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .6);
+  pointer-events: none;
+}
+.sm-color-info { justify-content: flex-start; align-items: center; gap: 8px; }
+.sm-color-chip {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background:
+    linear-gradient(var(--chip), var(--chip)),
+    repeating-conic-gradient(#999 0% 25%, #ddd 0% 50%) 0 0 / 7px 7px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ui-fg) 35%, transparent);
+}
+
 .cm-editor.cm-scrub-hover .cm-content,
 .cm-editor.cm-scrubbing .cm-content,
 .cm-editor.cm-scrubbing { cursor: ew-resize !important; }

@@ -8,6 +8,8 @@ import {
   type ViewUpdate,
 } from "@codemirror/view";
 
+import { openColorEditor } from "./sliders";
+
 // ================================================================== 括号配对着色
 
 const OPEN = "([{";
@@ -115,7 +117,8 @@ interface ColorLiteral {
 function parseArgs(args: string, components: number): Pick<ColorLiteral, "rgb" | "alpha"> | null {
   const parts = args.split(",").map((s) => s.trim());
   const nums = parts.map(Number);
-  if (nums.some((n) => !Number.isFinite(n))) return null;
+  // 只把分量全在 0..1 之内的当作颜色，超出范围的（比如位置、HDR 强度）不显示色块
+  if (nums.some((n) => !(n >= 0 && n <= 1))) return null;
   if (parts.length === 1) return { rgb: [nums[0], nums[0], nums[0]], alpha: components === 4 ? parts[0] : null };
   if (components === 3 && parts.length === 3) return { rgb: [nums[0], nums[1], nums[2]], alpha: null };
   if (components === 4 && parts.length === 4) return { rgb: [nums[0], nums[1], nums[2]], alpha: parts[3] };
@@ -179,12 +182,13 @@ class SwatchWidget extends WidgetType {
   toDOM(view: EditorView) {
     const el = document.createElement("span");
     el.className = "cm-color-swatch";
-    el.title = "点击选择颜色";
+    el.title = "点击编辑颜色";
     el.style.setProperty("--swatch", "#" + this.literal.rgb.map(toHex).join(""));
     el.addEventListener("mousedown", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      openPicker(view, this.literal, el);
+      // 优先用编辑器内的取色板（带透明度、拖动实时生效）；没开数值滑条时退回系统取色器
+      if (!openColorEditor(view, this.literal.from)) openPicker(view, this.literal, el);
     });
     return el;
   }
