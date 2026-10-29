@@ -357,7 +357,7 @@ function computeWrapIndent(view: EditorView): DecorationSet {
         for (const ch of lead) cols = ch === "\t" ? cols + tabSize - (cols % tabSize) : cols + 1;
         marks.push(
           Decoration.line({
-            attributes: { style: `padding-left: calc(${cols}ch + 6px); text-indent: -${cols}ch` },
+            attributes: { style: `padding-left: ${cols}ch; text-indent: -${cols}ch` },
           }).range(line.from),
         );
       }

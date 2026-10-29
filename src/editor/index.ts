@@ -71,8 +71,16 @@ const baseTheme = EditorView.theme({
   },
   "&.cm-focused": { outline: "none" },
   ".cm-scroller": { overflowX: "auto" },
-  ".cm-content": { caretColor: "var(--ed-cursor)", padding: "8px 0" },
-  ".cm-line": { padding: "0 16px 0 6px" },
+  // 左边 6px 的留白放在 content 上而不是每一行上：当前行 / 出错行的底色才从第 0 列开始，
+  // 不会比缩进参考线多伸出去一截
+  ".cm-content": { caretColor: "var(--ed-cursor)", padding: "8px 0 8px 6px" },
+  ".cm-line": { padding: "0 16px 0 0" },
+  // 缩进参考线插件默认往右挪 2px + 半个字符；抵消掉，参考线正好落在列边界上（和 VS Code 一样），
+  // 第 0 列的参考线也就和高亮底色的左边缘对齐
+  ".cm-indent-markers::before": { left: "-0.5ch" },
+  // 参考线是 z-index: -1 的伪元素，默认画在行背景下面，当前行 / 出错行的底色会把它盖住；
+  // 让每行自成一个层叠上下文，参考线就夹在行背景和文字之间
+  ".cm-indent-markers": { isolation: "isolate" },
   ".cm-cursor, .cm-dropCursor": { borderLeft: "2px solid var(--ed-cursor)" },
   "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground": {
     backgroundColor: "var(--ed-selection)",
