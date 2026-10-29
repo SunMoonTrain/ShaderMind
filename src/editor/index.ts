@@ -30,7 +30,7 @@ import { indentationMarkers } from "@replit/codemirror-indentation-markers";
 import type { ShaderDiagnostic } from "../glsl";
 import { fontStack, type EditorSettings } from "../settings";
 import { glslCompletionSource, glslHover } from "./completion";
-import { bracketColors, colorSwatches, numberScrub, wrapIndent } from "./decorations";
+import { bracketColors, colorSwatches, fullHeightSelection, numberScrub, wrapIndent } from "./decorations";
 import { glsl } from "./glsl-language";
 import { valueSliders } from "./sliders";
 import { vscodeKeymap } from "./keymap";
@@ -388,6 +388,7 @@ export function createEditor(options: EditorOptions): EditorHandle {
         highlightSpecialChars(),
         history(),
         drawSelection({ cursorBlinkRate: 1100 }),
+        fullHeightSelection,
         dropCursor(),
         indentOnInput(),
         bracketMatching(),

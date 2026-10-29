@@ -2,8 +2,10 @@ import { EditorSelection, Transaction, type EditorState, type Extension, type Ra
 import {
   Decoration,
   EditorView,
+  RectangleMarker,
   ViewPlugin,
   WidgetType,
+  layer,
   type DecorationSet,
   type ViewUpdate,
 } from "@codemirror/view";
@@ -379,3 +381,47 @@ export const wrapIndent: Extension = ViewPlugin.fromClass(
   },
   { decorations: (v) => v.decorations },
 );
+
+// ================================================================== 选区占满行高
+
+/** 把文档坐标 y 吸附到最近的行边界（自动换行的一行文档会占好几个视觉行，按视觉行算）。 */
+function snapToRow(view: EditorView, docY: number): number {
+  const block = view.lineBlockAtHeight(docY);
+  const rows = Math.max(1, Math.round(block.height / view.defaultLineHeight));
+  const rowHeight = block.height / rows;
+  return block.top + Math.round((docY - block.top) / rowHeight) * rowHeight;
+}
+
+/**
+ * 替换 drawSelection 自带的选区层。
+ * 自带的选区在“只选了一部分的行”上取的是字形框的上下沿，行高大于 1 时比行矮一截、
+ * 上下各缩进去一点，和当前行底色、整行选中的部分对不齐。这里沿用它算出的矩形，
+ * 只把上下边吸附到最近的行边界，选区就和行底色一样高。
+ */
+export const fullHeightSelection: Extension = [
+  layer({
+    above: false,
+    class: "sm-selection-layer",
+    update: (u) => u.docChanged || u.selectionSet || u.viewportChanged || u.geometryChanged,
+    markers(view) {
+      // 标记的 top 相对于滚动容器的内容原点（和 CodeMirror 内部的 getBase 一致），换算成文档坐标再吸附
+      const scroller = view.scrollDOM.getBoundingClientRect();
+      const baseTop = scroller.top - view.scrollDOM.scrollTop * view.scaleY;
+      const toDoc = (y: number) => (y + baseTop - view.documentTop) / view.scaleY;
+      const fromDoc = (y: number) => y * view.scaleY + view.documentTop - baseTop;
+
+      const markers: RectangleMarker[] = [];
+      for (const range of view.state.selection.ranges) {
+        if (range.empty) continue;
+        for (const m of RectangleMarker.forRange(view, "cm-selectionBackground", range)) {
+          const top = fromDoc(snapToRow(view, toDoc(m.top)));
+          const bottom = fromDoc(snapToRow(view, toDoc(m.top + m.height)));
+          if (bottom > top) markers.push(new RectangleMarker("cm-selectionBackground", m.left, top, m.width, bottom - top));
+        }
+      }
+      return markers;
+    },
+  }),
+  // 隐藏 drawSelection 自带的那一层（光标层不受影响）
+  EditorView.theme({ ".cm-selectionLayer": { display: "none" } }),
+];
