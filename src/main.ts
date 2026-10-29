@@ -70,6 +70,7 @@ const el = {
   sbSelection: $("sb-selection"),
   sbIndent: $<HTMLButtonElement>("sb-indent"),
   sbFont: $<HTMLButtonElement>("sb-font"),
+  statCursor: $("stat-cursor"),
   statTime: $("stat-time"),
   statRes: $("stat-res"),
   statFps: $("stat-fps"),
@@ -491,9 +492,29 @@ async function main(): Promise<void> {
     el.canvas.setPointerCapture(event.pointerId);
     renderer.pointerDown(...canvasPoint(event));
   });
-  el.canvas.addEventListener("pointermove", (event) => renderer.pointerMove(...canvasPoint(event)));
+  el.canvas.addEventListener("pointermove", (event) => {
+    const [x, y] = canvasPoint(event);
+    renderer.pointerMove(x, y);
+    showCursorReadout(x, y);
+  });
   el.canvas.addEventListener("pointerup", () => renderer.pointerUp());
   el.canvas.addEventListener("pointercancel", () => renderer.pointerUp());
+  el.canvas.addEventListener("pointerleave", () => (el.statCursor.hidden = true));
+
+  /**
+   * 状态栏读数：鼠标下那个像素的坐标（和 gl_FragCoord 一样左下角为原点，
+   * 该像素的 fragCoord 是它加 0.5），以及这个像素中心的 vUV。
+   */
+  function showCursorReadout(x: number, y: number): void {
+    const w = el.canvas.width;
+    const h = el.canvas.height;
+    const px = Math.min(Math.floor(x * w), w - 1);
+    const py = Math.min(Math.floor(y * h), h - 1);
+    const u = ((px + 0.5) / w).toFixed(3);
+    const v = ((py + 0.5) / h).toFixed(3);
+    el.statCursor.textContent = `px ${px}, ${py}  uv ${u}, ${v}`;
+    el.statCursor.hidden = false;
+  }
 
   // ------------------------------------------------------------ 画布比例
 

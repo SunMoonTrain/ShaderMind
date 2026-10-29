@@ -442,6 +442,7 @@ button.sb-item:hover { background: var(--ui-hover); color: var(--ui-fg); }
 .sb-path { overflow: hidden; text-overflow: ellipsis; min-width: 0; flex-shrink: 1; }
 .sb-problems.has-errors { color: var(--ui-err); }
 .sb-item[hidden] { display: none; }
+.sb-cursor-readout { white-space: pre; color: var(--ui-fg); }
 
 /* ================================================================ 浮层通用 */
 
