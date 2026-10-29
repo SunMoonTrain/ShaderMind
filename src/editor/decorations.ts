@@ -1,4 +1,4 @@
-import { EditorSelection, Transaction, type Extension, type Range } from "@codemirror/state";
+import { EditorSelection, Transaction, type EditorState, type Extension, type Range } from "@codemirror/state";
 import {
   Decoration,
   EditorView,
@@ -232,8 +232,8 @@ interface NumberHit {
 }
 
 /** 找到 pos 所在的数字字面量；标识符里的数字（vec3 的 3）不算。 */
-function numberAt(view: EditorView, pos: number): NumberHit | null {
-  const line = view.state.doc.lineAt(pos);
+export function numberAt(state: EditorState, pos: number): NumberHit | null {
+  const line = state.doc.lineAt(pos);
   const re = /(\d+\.\d*|\.\d+|\d+)(?![\w.])/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(line.text))) {
@@ -266,7 +266,7 @@ export const numberScrub: Extension = [
       if (!event.altKey || event.button !== 0 || event.shiftKey) return false;
       const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
       if (pos === null) return false;
-      const hit = numberAt(view, pos);
+      const hit = numberAt(view.state, pos);
       if (!hit) return false;
 
       event.preventDefault();
@@ -326,7 +326,7 @@ export const numberScrub: Extension = [
       let onNumber = false;
       if (hover) {
         const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
-        onNumber = pos !== null && numberAt(view, pos) !== null;
+        onNumber = pos !== null && numberAt(view.state, pos) !== null;
       }
       view.dom.classList.toggle("cm-scrub-hover", onNumber);
       return false;

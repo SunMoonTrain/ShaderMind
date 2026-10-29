@@ -32,6 +32,7 @@ import { fontStack, type EditorSettings } from "../settings";
 import { glslCompletionSource, glslHover } from "./completion";
 import { bracketColors, colorSwatches, numberScrub, wrapIndent } from "./decorations";
 import { glsl } from "./glsl-language";
+import { valueSliders } from "./sliders";
 import { vscodeKeymap } from "./keymap";
 import { findTheme } from "./themes";
 
@@ -242,6 +243,7 @@ const compartments = {
   brackets: new Compartment(),
   indentGuides: new Compartment(),
   swatches: new Compartment(),
+  sliders: new Compartment(),
   completion: new Compartment(),
 };
 
@@ -284,6 +286,7 @@ function reconfigure(s: EditorSettings): Record<keyof typeof compartments, Exten
       ? indentationMarkers({ highlightActiveBlock: true, markerType: "fullScope", thickness: 1, activeThickness: 1 })
       : [],
     swatches: s.colorSwatches ? colorSwatches : [],
+    sliders: s.valueSliders ? valueSliders : [],
     completion: s.autocomplete
       ? autocompletion({ override: [glslCompletionSource], icons: true, maxRenderedOptions: 60, defaultKeymap: false })
       : [],
@@ -313,8 +316,11 @@ export interface EditorOptions {
   parent: HTMLElement;
   doc: string;
   settings: EditorSettings;
-  /** 每次文档变化时调用（未做防抖，防抖在调用方）。 */
-  onChange(source: string): void;
+  /**
+   * 每次文档变化时调用（未做防抖，防抖在调用方）。
+   * live 为 true 表示改动来自拖动调值 / 滑条 / 取色，调用方应立即重编译。
+   */
+  onChange(source: string, live: boolean): void;
   onCursor(info: CursorInfo): void;
 }
 
@@ -352,6 +358,9 @@ function toLintDiagnostics(state: EditorState, list: ShaderDiagnostic[]): Diagno
   return out;
 }
 
+/** 这些来源的改动需要立即看到画面变化，不走防抖。 */
+const LIVE_EVENTS = ["input.scrub", "input.slider", "input.color"];
+
 export function createEditor(options: EditorOptions): EditorHandle {
   const initial = reconfigure(options.settings);
   const dynamic = (Object.keys(compartments) as (keyof typeof compartments)[]).map((k) =>
@@ -386,7 +395,12 @@ export function createEditor(options: EditorOptions): EditorHandle {
         baseTheme,
         chinesePhrases,
         EditorView.updateListener.of((update) => {
-          if (update.docChanged) options.onChange(update.state.doc.toString());
+          if (update.docChanged) {
+            const live = update.transactions.some((tr) =>
+              LIVE_EVENTS.some((event) => tr.isUserEvent(event)),
+            );
+            options.onChange(update.state.doc.toString(), live);
+          }
           if (update.docChanged || update.selectionSet) options.onCursor(cursorInfo(update.state));
         }),
       ],

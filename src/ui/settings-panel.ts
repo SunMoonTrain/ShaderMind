@@ -19,6 +19,7 @@ const TOGGLES: { key: keyof EditorSettings; label: string; hint: string }[] = [
   { key: "bracketColors", label: "括号配对着色", hint: "按嵌套层级给括号上不同颜色" },
   { key: "indentGuides", label: "缩进参考线", hint: "显示每层缩进的竖线" },
   { key: "colorSwatches", label: "颜色色块", hint: "在 vec3(…) / vec4(…) 颜色字面量前显示色块，点击可取色" },
+  { key: "valueSliders", label: "数值滑条", hint: "单击数字弹出滑条，单击 vec2(…) 弹出二维调节板，拖动时画面实时更新" },
 ];
 
 export const SHORTCUTS: [string, string][] = [

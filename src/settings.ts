@@ -15,6 +15,8 @@ export interface EditorSettings {
   bracketColors: boolean;
   indentGuides: boolean;
   colorSwatches: boolean;
+  /** 单击数字弹出滑条、单击 vec2 弹出二维调节板 */
+  valueSliders: boolean;
   autocomplete: boolean;
   /** 停止输入后多久重新编译（毫秒） */
   compileDelay: number;
@@ -53,6 +55,7 @@ export const DEFAULT_SETTINGS: EditorSettings = {
   bracketColors: true,
   indentGuides: true,
   colorSwatches: true,
+  valueSliders: true,
   autocomplete: true,
   compileDelay: 300,
 };
@@ -110,6 +113,7 @@ export function sanitizeSettings(value: unknown): EditorSettings {
     bracketColors: bool(r.bracketColors, d.bracketColors),
     indentGuides: bool(r.indentGuides, d.indentGuides),
     colorSwatches: bool(r.colorSwatches, d.colorSwatches),
+    valueSliders: bool(r.valueSliders, d.valueSliders),
     autocomplete: bool(r.autocomplete, d.autocomplete),
     compileDelay: Math.round(clampNum(r.compileDelay, 50, 3000, d.compileDelay)),
   };

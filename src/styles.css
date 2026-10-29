@@ -664,6 +664,54 @@ button.sb-item:hover { background: var(--ui-hover); color: var(--ui-fg); }
   padding: 0;
 }
 
+/* 数值滑条 / vec2 调节板 */
+.sm-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px 6px;
+  font-family: var(--ui-font);
+  font-size: 11px;
+  color: var(--ui-fg-dim);
+}
+.sm-slider-range {
+  width: 200px;
+  margin: 0;
+  accent-color: var(--ui-accent);
+  cursor: ew-resize;
+}
+.sm-slider-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.sm-slider-value { color: var(--ui-fg); font-family: var(--mono-font); }
+.sm-pad {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  border: 1px solid var(--ui-border);
+  border-radius: 3px;
+  background:
+    linear-gradient(var(--ui-border), var(--ui-border)) center / 1px 100% no-repeat,
+    linear-gradient(var(--ui-border), var(--ui-border)) center / 100% 1px no-repeat,
+    var(--ui-bg);
+  cursor: crosshair;
+  touch-action: none;
+}
+.sm-pad:focus-visible { outline: 1px solid var(--ui-accent); outline-offset: 1px; }
+.sm-pad-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  background: var(--ui-accent);
+  box-shadow: 0 0 0 2px var(--ui-bg);
+  pointer-events: none;
+}
+
 .cm-editor.cm-scrub-hover .cm-content,
 .cm-editor.cm-scrubbing .cm-content,
 .cm-editor.cm-scrubbing { cursor: ew-resize !important; }

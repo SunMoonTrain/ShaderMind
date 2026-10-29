@@ -117,10 +117,11 @@ async function main(): Promise<void> {
     parent: el.editor,
     doc: config.source || DEFAULT_SHADER,
     settings,
-    onChange: () => {
+    onChange: (_source, live) => {
       dirty = true;
       updateFileLabel();
-      scheduleCompile();
+      if (live) compileNextFrame();
+      else scheduleCompile();
       scheduleSave();
     },
     onCursor: (info) => {
@@ -218,6 +219,16 @@ async function main(): Promise<void> {
   }
 
   const scheduleCompile = debounce(compileNow, () => settings.compileDelay);
+
+  // 拖动调值时每帧最多编译一次，画面跟手
+  let compileFrame = 0;
+  function compileNextFrame(): void {
+    if (compileFrame) return;
+    compileFrame = requestAnimationFrame(() => {
+      compileFrame = 0;
+      compileNow();
+    });
+  }
 
   // ------------------------------------------------------------ 文件
 
