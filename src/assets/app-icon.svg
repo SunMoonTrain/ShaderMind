@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 2 2">
+  <!-- 由 scripts/render-icon.mjs 生成，不要手改 -->
+  <polygon points="-0.06291,-0.18985 0,-0.98 0.06291,-0.18985" fill="#ff771f"/>
+  <polygon points="0.08976,-0.17873 0.48083,-0.48083 0.17873,-0.08976" fill="#dd2d58"/>
+  <polygon points="0.18985,-0.06291 0.98,0 0.18985,0.06291" fill="#8c1cb0"/>
+  <polygon points="0.17873,0.08976 0.48083,0.48083 0.08976,0.17873" fill="#3b4cf2"/>
+  <polygon points="0.06291,0.18985 0,0.98 -0.06291,0.18985" fill="#1aa2f9"/>
+  <polygon points="-0.08976,0.17873 -0.48083,0.48083 -0.17873,0.08976" fill="#3bebc0"/>
+  <polygon points="-0.18985,0.06291 -0.98,0 -0.18985,-0.06291" fill="#8cfd69"/>
+  <polygon points="-0.17873,-0.08976 -0.48083,-0.48083 -0.08976,-0.17873" fill="#ddcd26"/>
+  <circle r="0.15" fill="#ffffff"/>
+</svg>

@@ -173,6 +173,8 @@ ShaderMind/
 ├─ package.json
 ├─ vite.config.ts          Vite 配置（固定 1420 端口供 Tauri 连接）
 ├─ tsconfig.json
+├─ scripts/
+│  └─ render-icon.mjs      按规格绘制应用图标：各尺寸 PNG、icon.ico、标题栏用的 SVG
 ├─ src/                    前端
 │  ├─ main.ts              入口：串起编辑器、渲染器、纹理槽、命令、快捷键、文件与配置读写
 │  ├─ renderer.ts          WebGL2 渲染器：编译着色器、管理 4 个纹理、rAF 循环
@@ -181,13 +183,14 @@ ShaderMind/
 │  ├─ config.ts            配置结构、字段收敛，以及对 Rust 命令的封装
 │  ├─ settings.ts          编辑器设置的结构与默认值、字体预设与检测
 │  ├─ styles.css           界面样式（颜色全部来自主题变量）
+│  ├─ assets/app-icon.svg  标题栏左上角的图标（由 render-icon.mjs 生成）
 │  ├─ editor/              编辑器
 │  │  ├─ index.ts          组装 CodeMirror：可热切换的设置、诊断、光标信息
 │  │  ├─ glsl-language.ts  GLSL 分词器、缩进、折叠、高亮样式
 │  │  ├─ glsl-data.ts      关键字 / 类型 / 内置函数签名与中文说明 / 代码片段
 │  │  ├─ completion.ts     自动补全与悬停提示，扫描用户定义的函数和变量
 │  │  ├─ decorations.ts    括号配对着色、颜色色块、拖动调值、折行悬挂缩进
-│  │  ├─ sliders.ts        单击数字弹出的滑条与 vec2 二维调节板
+│  │  ├─ sliders.ts        单击数字弹出的滑条、vec2 二维调节板与颜色取色板
 │  │  ├─ keymap.ts         VS Code 风格快捷键
 │  │  └─ themes.ts         5 套主题定义，写成 CSS 变量
 │  └─ ui/
@@ -199,7 +202,7 @@ ShaderMind/
    ├─ build.rs
    ├─ tauri.conf.json      窗口、CSP、打包配置
    ├─ capabilities/        权限清单
-   ├─ icons/
+   ├─ icons/              应用图标，运行 node scripts/render-icon.mjs 重新生成
    └─ src/
       ├─ main.rs           入口
       └─ lib.rs            五个命令：配置读写、图片读取、文本文件读写
