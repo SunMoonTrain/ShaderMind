@@ -29,6 +29,7 @@ export interface ThemeDef {
   editor: {
     gutterFg: string;
     gutterActiveFg: string;
+    /** 必须带透明度：选区画在行的下面，不透明的当前行底色会把这一行的选区整个盖住 */
     activeLine: string;
     selection: string;
     selectionMatch: string;
@@ -97,7 +98,7 @@ export const THEMES: ThemeDef[] = [
       ok: "#98c379", err: "#e06c75", warn: "#e5c07b", shadow: "rgba(0,0,0,.5)",
     },
     editor: {
-      gutterFg: "#495162", gutterActiveFg: "#abb2bf", activeLine: "#2c313c", selection: "#3e4451",
+      gutterFg: "#495162", gutterActiveFg: "#abb2bf", activeLine: "#99bbff0a", selection: "#67769680",
       selectionMatch: "#3e445180", cursor: "#528bff", bracketMatch: "#515a6b", indent: "#3b4048",
       indentActive: "#c8c8c859", searchMatch: "#42557b", searchMatchActive: "#314365", errorLine: "#e06c7514",
     },
@@ -119,7 +120,7 @@ export const THEMES: ThemeDef[] = [
       ok: "#9ece6a", err: "#f7768e", warn: "#e0af68", shadow: "rgba(0,0,0,.5)",
     },
     editor: {
-      gutterFg: "#363b54", gutterActiveFg: "#737aa2", activeLine: "#1e202e", selection: "#515c7e4d",
+      gutterFg: "#363b54", gutterActiveFg: "#737aa2", activeLine: "#c0caf508", selection: "#515c7e99",
       selectionMatch: "#3d59a14d", cursor: "#c0caf5", bracketMatch: "#3b4261", indent: "#292e42",
       indentActive: "#3b4261", searchMatch: "#3d59a166", searchMatchActive: "#e0af6855", errorLine: "#f7768e14",
     },
@@ -141,7 +142,7 @@ export const THEMES: ThemeDef[] = [
       ok: "#a6e3a1", err: "#f38ba8", warn: "#f9e2af", shadow: "rgba(0,0,0,.5)",
     },
     editor: {
-      gutterFg: "#7f849c", gutterActiveFg: "#b4befe", activeLine: "#cdd6f40d", selection: "#9399b240",
+      gutterFg: "#7f849c", gutterActiveFg: "#b4befe", activeLine: "#cdd6f40d", selection: "#9399b266",
       selectionMatch: "#9399b226", cursor: "#f5e0dc", bracketMatch: "#7f849c40", indent: "#313244",
       indentActive: "#585b70", searchMatch: "#89b4fa33", searchMatchActive: "#f9e2af40", errorLine: "#f38ba814",
     },
