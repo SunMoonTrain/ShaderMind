@@ -29,11 +29,17 @@ interface Channel {
 }
 
 interface Uniforms {
-  iTime: WebGLUniformLocation | null;
   iResolution: WebGLUniformLocation | null;
-  iMouse: WebGLUniformLocation | null;
-  iChannel: (WebGLUniformLocation | null)[];
+  iTime: WebGLUniformLocation | null;
+  iTimeDelta: WebGLUniformLocation | null;
+  iFrameRate: WebGLUniformLocation | null;
+  iFrame: WebGLUniformLocation | null;
+  iChannelTime: WebGLUniformLocation | null;
   iChannelResolution: WebGLUniformLocation | null;
+  iMouse: WebGLUniformLocation | null;
+  iDate: WebGLUniformLocation | null;
+  iSampleRate: WebGLUniformLocation | null;
+  iChannel: (WebGLUniformLocation | null)[];
 }
 
 export const CHANNEL_COUNT = 4;
@@ -51,10 +57,17 @@ export class Renderer {
   private program: WebGLProgram | null = null;
   private uniforms: Uniforms | null = null;
 
-  private channelResolution = new Float32Array(CHANNEL_COUNT * 2);
-  private mouse: [number, number] = [0.5, 0.5];
+  private channelResolution = new Float32Array(CHANNEL_COUNT * 3).fill(1);
+  private channelTime = new Float32Array(CHANNEL_COUNT);
+
+  /** 和 Shadertoy 一样：xy 只在按住时更新，zw 是点击位置；单位为画布像素，原点在左下角。 */
+  private mouse = new Float32Array(4);
+  private mouseDown = false;
+  /** 刚按下的那一帧 iMouse.w 为正，之后变负。 */
+  private mouseClicked = false;
 
   private elapsed = 0;
+  private frameIndex = 0;
   private lastTick = 0;
   private paused = false;
   private rafId = 0;
@@ -152,16 +165,23 @@ export class Renderer {
 
     if (this.program) gl.deleteProgram(this.program);
     this.program = program;
+    // 数组 uniform 在部分驱动上只认 "name[0]"
+    const arrayLocation = (name: string) =>
+      gl.getUniformLocation(program, name + "[0]") ?? gl.getUniformLocation(program, name);
     this.uniforms = {
-      iTime: gl.getUniformLocation(program, "iTime"),
       iResolution: gl.getUniformLocation(program, "iResolution"),
+      iTime: gl.getUniformLocation(program, "iTime"),
+      iTimeDelta: gl.getUniformLocation(program, "iTimeDelta"),
+      iFrameRate: gl.getUniformLocation(program, "iFrameRate"),
+      iFrame: gl.getUniformLocation(program, "iFrame"),
+      iChannelTime: arrayLocation("iChannelTime"),
+      iChannelResolution: arrayLocation("iChannelResolution"),
       iMouse: gl.getUniformLocation(program, "iMouse"),
+      iDate: gl.getUniformLocation(program, "iDate"),
+      iSampleRate: gl.getUniformLocation(program, "iSampleRate"),
       iChannel: Array.from({ length: CHANNEL_COUNT }, (_, i) =>
         gl.getUniformLocation(program, "iChannel" + i),
       ),
-      iChannelResolution:
-        gl.getUniformLocation(program, "iChannelResolution[0]") ??
-        gl.getUniformLocation(program, "iChannelResolution"),
     };
     return [];
   }
@@ -195,8 +215,8 @@ export class Renderer {
     const height = (image as HTMLImageElement).naturalHeight || (image as ImageBitmap).height || 1;
     channel.width = width;
     channel.height = height;
-    this.channelResolution[index * 2] = width;
-    this.channelResolution[index * 2 + 1] = height;
+    this.channelResolution[index * 3] = width;
+    this.channelResolution[index * 3 + 1] = height;
     this.applyParams(index);
   }
 
@@ -221,8 +241,8 @@ export class Renderer {
 
     channel.width = 1;
     channel.height = 1;
-    this.channelResolution[index * 2] = 1;
-    this.channelResolution[index * 2 + 1] = 1;
+    this.channelResolution[index * 3] = 1;
+    this.channelResolution[index * 3 + 1] = 1;
     this.applyParams(index);
   }
 
@@ -233,8 +253,23 @@ export class Renderer {
 
   // ---------------------------------------------------------------- 时间 / 输入
 
-  setMouse(x: number, y: number): void {
-    this.mouse = [x, y];
+  /** 参数是画布内的归一化坐标 [0,1]，原点在左下角；这里换算成像素。 */
+  pointerDown(x: number, y: number): void {
+    const px = x * this.canvas.width;
+    const py = y * this.canvas.height;
+    this.mouse.set([px, py, px, py]);
+    this.mouseDown = true;
+    this.mouseClicked = true;
+  }
+
+  pointerMove(x: number, y: number): void {
+    if (!this.mouseDown) return;
+    this.mouse[0] = x * this.canvas.width;
+    this.mouse[1] = y * this.canvas.height;
+  }
+
+  pointerUp(): void {
+    this.mouseDown = false;
   }
 
   setPaused(paused: boolean): void {
@@ -247,6 +282,7 @@ export class Renderer {
 
   resetTime(): void {
     this.elapsed = 0;
+    this.frameIndex = 0;
   }
 
   getTime(): number {
@@ -298,10 +334,23 @@ export class Renderer {
       const u = this.uniforms;
       gl.useProgram(this.program);
 
+      const [mx, my, cx, cy] = this.mouse;
+      const date = new Date();
+      const daySeconds =
+        date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds() + date.getMilliseconds() / 1000;
+      this.channelTime.fill(this.elapsed);
+
+      if (u.iResolution) gl.uniform3f(u.iResolution, width, height, 1);
       if (u.iTime) gl.uniform1f(u.iTime, this.elapsed);
-      if (u.iResolution) gl.uniform2f(u.iResolution, width, height);
-      if (u.iMouse) gl.uniform2f(u.iMouse, this.mouse[0], this.mouse[1]);
-      if (u.iChannelResolution) gl.uniform2fv(u.iChannelResolution, this.channelResolution);
+      if (u.iTimeDelta) gl.uniform1f(u.iTimeDelta, this.paused ? 0 : dt);
+      if (u.iFrameRate) gl.uniform1f(u.iFrameRate, this.fps);
+      if (u.iFrame) gl.uniform1i(u.iFrame, this.frameIndex);
+      if (u.iChannelTime) gl.uniform1fv(u.iChannelTime, this.channelTime);
+      if (u.iChannelResolution) gl.uniform3fv(u.iChannelResolution, this.channelResolution);
+      // z 为正表示按住，w 只在按下的那一帧为正
+      if (u.iMouse) gl.uniform4f(u.iMouse, mx, my, this.mouseDown ? cx : -cx, this.mouseClicked ? cy : -cy);
+      if (u.iDate) gl.uniform4f(u.iDate, date.getFullYear(), date.getMonth(), date.getDate(), daySeconds);
+      if (u.iSampleRate) gl.uniform1f(u.iSampleRate, 44100);
 
       for (let i = 0; i < CHANNEL_COUNT; i++) {
         gl.activeTexture(gl.TEXTURE0 + i);
@@ -311,6 +360,8 @@ export class Renderer {
       }
 
       gl.drawArrays(gl.TRIANGLES, 0, 3);
+      this.mouseClicked = false;
+      if (!this.paused) this.frameIndex++;
     } else {
       gl.clearColor(0, 0, 0, 1);
       gl.clear(gl.COLOR_BUFFER_BIT);

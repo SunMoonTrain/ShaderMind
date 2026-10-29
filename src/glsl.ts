@@ -12,7 +12,7 @@ void main() {
 `;
 
 /**
- * 拼接在用户代码前面的片段着色器头部。
+ * 拼接在用户代码前面的片段着色器头部，uniform 与 Shadertoy 一致。
  * 注意：这里不使用 `#line` 指令（各驱动实现不一致），而是在解析错误日志时
  * 固定减去 HEADER_LINES，保证行号映射是确定的。
  */
@@ -20,21 +20,40 @@ export const FRAGMENT_HEADER = `#version 300 es
 precision highp float;
 precision highp int;
 precision highp sampler2D;
+#define HW_PERFORMANCE 1
 
+uniform vec3  iResolution;
 uniform float iTime;
-uniform vec2  iResolution;
-uniform vec2  iMouse;
+uniform float iTimeDelta;
+uniform float iFrameRate;
+uniform int   iFrame;
+uniform float iChannelTime[4];
+uniform vec3  iChannelResolution[4];
+uniform vec4  iMouse;
+uniform vec4  iDate;
+uniform float iSampleRate;
 uniform sampler2D iChannel0;
 uniform sampler2D iChannel1;
 uniform sampler2D iChannel2;
 uniform sampler2D iChannel3;
-uniform vec2  iChannelResolution[4];
 
 out vec4 fragColor;
 `;
 
 /** 头部占用的行数 —— 用户代码的第 1 行在完整源码里是第 HEADER_LINES + 1 行。 */
 export const HEADER_LINES = FRAGMENT_HEADER.split("\n").length - 1;
+
+/**
+ * 用户代码写的是 Shadertoy 的 mainImage() 时，接在末尾的入口。
+ * 拼在末尾不影响用户代码的行号。alpha 固定为 1，和 Shadertoy 的显示效果一致。
+ */
+const MAIN_IMAGE_FOOTER = `
+void main() {
+  vec4 color = vec4(0.0, 0.0, 0.0, 1.0);
+  mainImage(color, gl_FragCoord.xy);
+  fragColor = vec4(color.rgb, 1.0);
+}
+`;
 
 /**
  * 用户可能从别处粘贴带 `#version` 的代码，而 `#version` 必须在第一行。
@@ -44,8 +63,21 @@ export function stripVersionDirective(source: string): string {
   return source.replace(/^[ \t]*#version[^\n]*/m, "");
 }
 
+function stripComments(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, "");
+}
+
+/**
+ * 两种写法都支持：
+ * - Shadertoy 风格：定义 `mainImage(out vec4, in vec2)`，入口由 MAIN_IMAGE_FOOTER 补上；
+ * - 直接写 `main()`，把颜色写进 `fragColor`。
+ */
 export function buildFragmentSource(userSource: string): string {
-  return FRAGMENT_HEADER + stripVersionDirective(userSource);
+  const code = stripComments(userSource);
+  const hasMainImage = /\bvoid\s+mainImage\s*\(/.test(code);
+  const hasMain = /\bvoid\s+main\s*\(/.test(code);
+  const footer = hasMainImage && !hasMain ? MAIN_IMAGE_FOOTER : "";
+  return FRAGMENT_HEADER + stripVersionDirective(userSource) + footer;
 }
 
 export type Severity = "error" | "warning";
@@ -103,27 +135,30 @@ export function parseShaderLog(
 /** 打开应用时的初始内容。 */
 export const DEFAULT_SHADER = `// ShaderMind — 示例着色器
 //
-// 内置 uniform:
+// 与 Shadertoy 兼容：直接写 mainImage()，Shadertoy 上的代码可以原样粘贴进来。
+// 内置 uniform（声明已经拼在代码前面）:
+//   vec3      iResolution;           画布像素尺寸，z 为像素宽高比（1.0）
 //   float     iTime;                 运行秒数
-//   vec2      iResolution;           画布像素尺寸
-//   vec2      iMouse;                归一化鼠标坐标 [0,1]，左下角为原点
+//   float     iTimeDelta;            上一帧耗时（秒）
+//   int       iFrame;                帧序号
+//   vec4      iMouse;                xy: 按住时的鼠标像素坐标；zw: 点击位置（松开后为负）
+//   vec4      iDate;                 年、月（0 起）、日、当天秒数
 //   sampler2D iChannel0 .. iChannel3 下方四个纹理槽位
-//   vec2      iChannelResolution[4]; 各槽位的像素尺寸
-//
-// 顶点着色器与 #version / precision / out vec4 fragColor 都已内置，
-// 这里直接写 main()，把颜色写进 fragColor 即可。
+//   vec3      iChannelResolution[4]; 各槽位的像素尺寸
 
 vec3 palette(float t) {
     return 0.55 + 0.45 * cos(6.28318 * (t + vec3(0.00, 0.28, 0.55)));
 }
 
-void main() {
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     // 居中并按短边归一化，保证不同窗口比例下图形不变形
-    vec2 uv = (gl_FragCoord.xy * 2.0 - iResolution) / min(iResolution.x, iResolution.y);
-    vec2 mouse = iMouse * 2.0 - 1.0;
+    float scale = min(iResolution.x, iResolution.y);
+    vec2 uv = (fragCoord * 2.0 - iResolution.xy) / scale;
 
-    // 图案中心跟随鼠标
-    uv -= mouse * 0.6;
+    // 按住鼠标拖动，图案中心跟随
+    if (iMouse.z > 0.0 || iMouse.xy != vec2(0.0)) {
+        uv -= (iMouse.xy * 2.0 - iResolution.xy) / scale;
+    }
 
     float r = length(uv);
     float a = atan(uv.y, uv.x);
@@ -139,7 +174,7 @@ void main() {
     col = pow(col, vec3(0.85));
 
     // 想用纹理时，把下面这行取消注释，并往槽位 0 拖一张图片：
-    // col = mix(col, texture(iChannel0, gl_FragCoord.xy / iChannelResolution[0]).rgb, 0.5);
+    // col = mix(col, texture(iChannel0, fragCoord / iChannelResolution[0].xy).rgb, 0.5);
 
     fragColor = vec4(col, 1.0);
 }

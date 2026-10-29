@@ -33,20 +33,35 @@ export interface SymbolDoc {
   doc: string;
 }
 
-/** 本应用注入的 uniform 与输出变量。 */
+/** 本应用注入的 uniform 与输出变量（与 Shadertoy 一致）。 */
 export const APP_SYMBOLS: Record<string, SymbolDoc> = {
+  iResolution: {
+    signature: "uniform vec3 iResolution",
+    doc: "画布的像素尺寸（已乘设备像素比），z 为像素宽高比，恒为 1.0。",
+  },
   iTime: { signature: "uniform float iTime", doc: "运行秒数，受工具栏的暂停 / 归零控制。" },
-  iResolution: { signature: "uniform vec2 iResolution", doc: "画布的像素尺寸（已乘设备像素比）。" },
-  iMouse: { signature: "uniform vec2 iMouse", doc: "归一化鼠标坐标，范围 [0,1]，左下角为原点。" },
+  iTimeDelta: { signature: "uniform float iTimeDelta", doc: "上一帧耗时（秒）；暂停时为 0。" },
+  iFrameRate: { signature: "uniform float iFrameRate", doc: "当前帧率。" },
+  iFrame: { signature: "uniform int iFrame", doc: "帧序号，从 0 开始；时间归零时一起归零。" },
+  iChannelTime: { signature: "uniform float iChannelTime[4]", doc: "各纹理槽的播放时间；图片槽位等于 iTime。" },
+  iChannelResolution: {
+    signature: "uniform vec3 iChannelResolution[4]",
+    doc: "四个纹理槽各自的像素尺寸；空槽为 vec3(1.0)。",
+  },
+  iMouse: {
+    signature: "uniform vec4 iMouse",
+    doc: "鼠标像素坐标，原点在左下角。xy：按住左键时的当前位置（松开后保持）；zw：按下的位置，按住时 z 为正，w 只在按下那一帧为正。",
+  },
+  iDate: { signature: "uniform vec4 iDate", doc: "本地日期：年、月（0 起）、日、当天已过秒数。" },
+  iSampleRate: { signature: "uniform float iSampleRate", doc: "音频采样率，固定 44100。" },
   iChannel0: { signature: "uniform sampler2D iChannel0", doc: "纹理槽 0。空槽是 1×1 黑色纹理。" },
   iChannel1: { signature: "uniform sampler2D iChannel1", doc: "纹理槽 1。空槽是 1×1 黑色纹理。" },
   iChannel2: { signature: "uniform sampler2D iChannel2", doc: "纹理槽 2。空槽是 1×1 黑色纹理。" },
   iChannel3: { signature: "uniform sampler2D iChannel3", doc: "纹理槽 3。空槽是 1×1 黑色纹理。" },
-  iChannelResolution: {
-    signature: "uniform vec2 iChannelResolution[4]",
-    doc: "四个纹理槽各自的像素尺寸；空槽为 vec2(1.0)。",
+  fragColor: {
+    signature: "out vec4 fragColor",
+    doc: "片段着色器的输出颜色。写 mainImage() 时它是参数；直接写 main() 时写入这个全局输出。",
   },
-  fragColor: { signature: "out vec4 fragColor", doc: "片段着色器的输出颜色，写入 RGBA。" },
 };
 
 /** GLSL 内置变量。 */
@@ -181,14 +196,15 @@ export interface SnippetDef {
 
 export const SNIPPETS: SnippetDef[] = [
   {
-    label: "main",
-    detail: "片段着色器入口",
-    template: "void main() {\n\tvec2 uv = gl_FragCoord.xy / iResolution;\n\t${}\n\tfragColor = vec4(${uv, 0.0}, 1.0);\n}",
+    label: "mainImage",
+    detail: "Shadertoy 入口",
+    template:
+      "void mainImage(out vec4 fragColor, in vec2 fragCoord) {\n\tvec2 uv = fragCoord / iResolution.xy;\n\t${}\n\tfragColor = vec4(${uv, 0.0}, 1.0);\n}",
   },
   {
     label: "uv",
     detail: "居中并按短边归一化的坐标",
-    template: "vec2 ${uv} = (gl_FragCoord.xy * 2.0 - iResolution) / min(iResolution.x, iResolution.y);",
+    template: "vec2 ${uv} = (fragCoord * 2.0 - iResolution.xy) / min(iResolution.x, iResolution.y);",
   },
   {
     label: "for",
@@ -245,7 +261,7 @@ export const SNIPPETS: SnippetDef[] = [
   {
     label: "tex",
     detail: "按画布坐标采样纹理槽",
-    template: "texture(iChannel${1:0}, gl_FragCoord.xy / iResolution).rgb",
+    template: "texture(iChannel${1:0}, fragCoord / iResolution.xy).rgb",
   },
 ];
 

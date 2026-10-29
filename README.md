@@ -8,6 +8,7 @@
 ## 功能
 
 - **WebGL2 渲染**，只需要写片段着色器；顶点着色器内置一个铺满屏幕的三角形（`gl_VertexID` 生成，无顶点缓冲）
+- **与 Shadertoy 兼容**：入口写 `mainImage()`，内置 uniform 的名称、类型和含义都和 Shadertoy 一致，单 pass 的代码可以原样粘贴
 - **VS Code 风格的编辑器**（CodeMirror 6）：
   - 针对 GLSL ES 3.00 的语法高亮，区分关键字、类型、内置函数、内置 uniform、分量（`.xyz`）等
   - 智能补全：内置函数（带签名与中文说明）、uniform、你自己定义的函数 / 变量 / 宏、`.` 之后的分量、常用代码片段
@@ -56,32 +57,43 @@ npm run tauri build
 
 ### 写着色器
 
-`#version`、`precision`、所有内置 uniform 的声明和 `out vec4 fragColor` 都已经由程序拼在你的代码前面，
-所以编辑器里直接写 `main()`，把颜色写进 `fragColor` 就行：
+写法和 Shadertoy 一样：`#version`、`precision` 和所有内置 uniform 的声明都已经由程序拼在你的代码前面，
+编辑器里只需要写 `mainImage()`：
 
 ```glsl
-void main() {
-    vec2 uv = gl_FragCoord.xy / iResolution;
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+    vec2 uv = fragCoord / iResolution.xy;
     fragColor = vec4(uv, 0.5 + 0.5 * sin(iTime), 1.0);
 }
 ```
+
+真正的 `main()` 由程序接在代码末尾（不影响行号），输出的 alpha 固定为 1，和 Shadertoy 的显示一致。
+也可以不写 `mainImage()`，自己写 `main()` 并把颜色写进全局输出 `fragColor`。
 
 从别处粘进来的代码如果自带 `#version`，会被自动去掉（替换成空行，行号不受影响）。
 
 ### 内置 uniform
 
+和 Shadertoy 一致：
+
 | 名称 | 类型 | 含义 |
 | --- | --- | --- |
+| `iResolution` | `vec3` | 画布的像素尺寸（已乘 DPR，上限 2×）；`z` 为像素宽高比，恒为 `1.0` |
 | `iTime` | `float` | 运行秒数，受工具栏的暂停 / 归零控制 |
-| `iResolution` | `vec2` | 画布的像素尺寸（已乘 DPR，上限 2×） |
-| `iMouse` | `vec2` | 归一化鼠标坐标，`[0,1]`，**左下角为原点**（和 `gl_FragCoord` 一致） |
+| `iTimeDelta` | `float` | 上一帧耗时（秒），暂停时为 0 |
+| `iFrameRate` | `float` | 当前帧率 |
+| `iFrame` | `int` | 帧序号，暂停时不增加，时间归零时一起归零 |
+| `iMouse` | `vec4` | 鼠标像素坐标，**左下角为原点**。`xy`：按住左键时的当前位置，松开后保持；`zw`：按下的位置，按住时 `z` 为正、松开后为负，`w` 只在按下那一帧为正 |
+| `iDate` | `vec4` | 本地日期：年、月（0 起）、日、当天已过秒数 |
 | `iChannel0` .. `iChannel3` | `sampler2D` | 底部四个纹理槽 |
-| `iChannelResolution[4]` | `vec2[4]` | 各槽位纹理的像素尺寸；空槽为 `vec2(1.0)` |
+| `iChannelResolution[4]` | `vec3[4]` | 各槽位纹理的像素尺寸；空槽为 `vec3(1.0)` |
+| `iChannelTime[4]` | `float[4]` | 各槽位的播放时间；图片槽位等于 `iTime` |
+| `iSampleRate` | `float` | 音频采样率，固定 `44100` |
 
-> 与 Shadertoy 的差异：这里 `iResolution` / `iChannelResolution` 是 `vec2` 而不是 `vec3`，
-> `iMouse` 是归一化的 `vec2` 而不是像素值 `vec4`。粘贴 Shadertoy 的代码时，
-> 把 `iResolution.xy` 改成 `iResolution`、`iMouse.xy/iResolution.xy` 改成 `iMouse` 即可，
-> 另外把 `mainImage(out vec4 fragColor, in vec2 fragCoord)` 改写成 `main()`。
+另外定义了宏 `HW_PERFORMANCE`（值为 `1`），引用它的 Shadertoy 代码也能直接编译。
+
+> 目前只支持单 pass：Buffer A–D、Common、Sound 标签页，以及立方体贴图、视频、键盘等输入还没有实现。
+> 纹理槽始终是 `sampler2D`，按 Shadertoy 默认的 vflip 方式上传。
 
 ### 纹理
 
@@ -93,7 +105,7 @@ void main() {
 
 ### 编辑器
 
-- **补全**：打字时自动弹出，`Tab` 或 `Enter` 接受；`Ctrl+Space` 手动触发。输入 `main`、`uv`、`for`、`rot2d`、
+- **补全**：打字时自动弹出，`Tab` 或 `Enter` 接受；`Ctrl+Space` 手动触发。输入 `mainImage`、`uv`、`for`、`rot2d`、
   `palette`、`hash21`、`noise`、`sdBox`、`smin` 等可以展开成代码片段，用 `Tab` 在占位符之间跳转
 - **悬停**：鼠标停在内置函数、uniform 或你自己定义的函数上，显示签名和说明
 - **颜色色块**：`vec3(1.0, 0.5, 0.2)` 这类颜色字面量前面会出现一个小色块，点击弹出取色器，选色时代码和画面同步变化

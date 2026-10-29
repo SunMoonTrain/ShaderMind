@@ -456,13 +456,23 @@ async function main(): Promise<void> {
 
   // ------------------------------------------------------------ 鼠标
 
-  el.canvas.addEventListener("pointermove", (event) => {
+  // 和 Shadertoy 一样只在按住左键时更新 iMouse；捕获指针，拖出画布也能继续跟踪
+  function canvasPoint(event: PointerEvent): [number, number] {
     const rect = el.canvas.getBoundingClientRect();
     const x = (event.clientX - rect.left) / Math.max(rect.width, 1);
     // 翻转 Y，让原点落在左下角，和 gl_FragCoord 一致
     const y = 1 - (event.clientY - rect.top) / Math.max(rect.height, 1);
-    renderer.setMouse(Math.min(Math.max(x, 0), 1), Math.min(Math.max(y, 0), 1));
+    return [Math.min(Math.max(x, 0), 1), Math.min(Math.max(y, 0), 1)];
+  }
+
+  el.canvas.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
+    el.canvas.setPointerCapture(event.pointerId);
+    renderer.pointerDown(...canvasPoint(event));
   });
+  el.canvas.addEventListener("pointermove", (event) => renderer.pointerMove(...canvasPoint(event)));
+  el.canvas.addEventListener("pointerup", () => renderer.pointerUp());
+  el.canvas.addEventListener("pointercancel", () => renderer.pointerUp());
 
   // ------------------------------------------------------------ 分隔条
 
